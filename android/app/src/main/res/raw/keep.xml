@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  audio_service resolves these controls by resource name at runtime. Release
+  resource shrinking cannot detect that dynamic lookup, so keep them explicitly.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/audio_service_fast_forward,@drawable/audio_service_fast_rewind,@drawable/audio_service_pause,@drawable/audio_service_play_arrow,@drawable/audio_service_skip_next,@drawable/audio_service_skip_previous,@drawable/audio_service_stop" />

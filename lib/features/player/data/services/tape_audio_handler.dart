@@ -8,7 +8,9 @@ import 'package:tape_88/features/library/data/android_artwork_cache.dart';
 
 final class TapeAudioHandler extends BaseAudioHandler with SeekHandler {
   TapeAudioHandler(this._session) {
-    player.playbackEventStream.map(_broadcastState).pipe(playbackState);
+    _playbackEventSubscription = player.playbackEventStream.listen((event) {
+      playbackState.add(_broadcastState(event));
+    });
     player.currentIndexStream.listen((index) {
       final items = queue.value;
       if (index != null && index >= 0 && index < items.length) {
@@ -29,6 +31,7 @@ final class TapeAudioHandler extends BaseAudioHandler with SeekHandler {
   List<Track> _tracks = const [];
   String _equalizerPreset = 'Flat';
   late final StreamSubscription<void> _becomingNoisySubscription;
+  late final StreamSubscription<PlaybackEvent> _playbackEventSubscription;
 
   Future<void> loadQueue(List<Track> tracks, {int initialIndex = 0}) async {
     _tracks = List.unmodifiable(tracks);
@@ -136,11 +139,22 @@ final class TapeAudioHandler extends BaseAudioHandler with SeekHandler {
     }
     final activated = await _session.setActive(true);
     if (!activated) return;
-    await player.play();
+    final playback = player.play();
+    // Publish immediately so Android promotes the service and activates the
+    // system MediaSession before the long-running play future completes.
+    playbackState.add(
+      _broadcastState(player.playbackEvent).copyWith(playing: true),
+    );
+    await playback;
   }
 
   @override
-  Future<void> pause() => player.pause();
+  Future<void> pause() async {
+    await player.pause();
+    playbackState.add(
+      _broadcastState(player.playbackEvent).copyWith(playing: false),
+    );
+  }
 
   @override
   Future<void> seek(Duration position) => player.seek(position);
@@ -260,6 +274,7 @@ final class TapeAudioHandler extends BaseAudioHandler with SeekHandler {
 
   Future<void> disposePlayer() async {
     await _becomingNoisySubscription.cancel();
+    await _playbackEventSubscription.cancel();
     await player.dispose();
   }
 

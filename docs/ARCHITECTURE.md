@@ -186,13 +186,15 @@ File digital không chứa bias/equalization cassette vật lý. UI cần tiếp
 - Manifest khai báo audio service và media-button receiver.
 - Quyền: `READ_MEDIA_AUDIO`, legacy storage, wake lock và media playback foreground service.
 - Adaptive icon dùng foreground cassette và nền `#121316`; launcher như ColorOS có thể áp mask riêng.
-- Release hiện dùng debug signing trong `android/app/build.gradle.kts`.
+- Tape 88 không xin quyền notification thông thường; playback controls được Android dựng từ foreground media session đang active.
+- `android/app/src/main/res/raw/keep.xml` giữ các drawable control của `audio_service`; plugin tra icon theo tên runtime nên release resource shrinker không được phép loại chúng.
+- Gradle dùng release signing khi có `android/key.properties`; nếu thiếu file, build local fallback sang debug signing.
 
 Trước Google Play:
 
 1. Tạo upload/release keystore ngoài repository.
-2. Thêm `key.properties` local; file này được ignore.
-3. Cấu hình `signingConfigs.release`.
+2. Sao chép `android/key.properties.example` thành `android/key.properties` và điền signing credentials; file này được ignore.
+3. Đặt keystore theo đường dẫn khai báo trong `storeFile`.
 4. Tăng `version` trong `pubspec.yaml`.
 5. Build `flutter build appbundle --release`.
 6. Kiểm tra notification permission theo target Android hiện hành.
@@ -251,8 +253,7 @@ Nguyên tắc hiệu năng:
 - Queue chưa jump chính xác tới current item với danh sách chiều cao động.
 - VU meter chưa phân tích PCM thật.
 - System volume sync và equalizer chỉ triển khai Android.
-- Release signing Android chưa cấu hình.
+- Cần tạo release keystore thật và `android/key.properties` trước khi phát hành Google Play.
 - iOS background playback cần test đầy đủ trên thiết bị thật.
 - Cần stress test với hàng nghìn track và cache artwork lớn.
 - Chưa có migration version chính thức cho file JSON local.
-

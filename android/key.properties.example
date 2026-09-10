@@ -1,0 +1,6 @@
+# Copy this file to android/key.properties and replace every placeholder.
+# android/key.properties and *.jks are ignored by Git.
+storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=tape88
+storeFile=../app/tape88-release.jks

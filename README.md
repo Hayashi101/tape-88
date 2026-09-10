@@ -81,8 +81,9 @@ Xem tài liệu chi tiết tại [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Lưu ý trước khi phát hành
 
-- Release Android hiện vẫn ký bằng debug key để tiện chạy thử; cần cấu hình keystore riêng trước khi đưa lên Google Play.
+- Gradle tự dùng release keystore khi có `android/key.properties`; nếu chưa có, APK release local tạm dùng debug key.
+- Sao chép `android/key.properties.example` thành `android/key.properties`, điền thông tin keystore thật trước khi đưa lên Google Play. Không commit hai file bí mật này.
+- Tape 88 không xin quyền thông báo thông thường. Android hiển thị playback controls thông qua foreground media session khi nhạc đang phát.
 - Equalizer và system-volume synchronization hiện chỉ có implementation native Android.
 - iOS cần chọn signing team và kiểm tra background audio/Control Center trên thiết bị thật.
 - Việc nhảy chính xác đến bài đang phát khi mở Queue đang được để lại cho vòng cải tiến sau.
-
