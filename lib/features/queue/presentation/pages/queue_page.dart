@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:tape_88/core/theme/app_colors.dart';
 import 'package:tape_88/core/widgets/retro_panel.dart';
@@ -16,16 +18,65 @@ class _QueuePageState extends State<QueuePage> {
   // Used only to estimate the initial position. Items remain content-sized so
   // larger accessibility fonts cannot overflow a fixed-height row.
   static const _estimatedItemExtent = 98.0;
-  late final ScrollController _scrollController = ScrollController(
-    initialScrollOffset:
-        (widget.controller.state.currentIndex - 2)
-            .clamp(0, widget.controller.state.queue.length)
-            .toDouble() *
-        _estimatedItemExtent,
-  );
+  late final int _initialTargetIndex;
+  late final ScrollController _scrollController;
+  final GlobalKey _initialTargetKey = GlobalKey();
+  bool _initialTargetAligned = false;
 
   PlayerController get controller => widget.controller;
   final Set<int> _ejectingIndices = <int>{};
+
+  @override
+  void initState() {
+    super.initState();
+    final state = widget.controller.state;
+    _initialTargetIndex =
+        state.currentIndex >= 0 && state.currentIndex < state.queue.length
+        ? state.currentIndex
+        : -1;
+    _scrollController = ScrollController(
+      initialScrollOffset: _initialTargetIndex < 0
+          ? 0
+          : (_initialTargetIndex - 2).clamp(0, state.queue.length).toDouble() *
+                _estimatedItemExtent,
+    );
+    if (_initialTargetIndex >= 0) _scheduleInitialTargetAlignment();
+  }
+
+  void _scheduleInitialTargetAlignment([int attempt = 0]) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _initialTargetAligned) return;
+      final targetContext = _initialTargetKey.currentContext;
+      if (targetContext == null) {
+        final itemCount = controller.state.queue.length;
+        if (_scrollController.hasClients &&
+            itemCount > 1 &&
+            _initialTargetIndex < itemCount) {
+          // Once the sliver has laid out its first children it knows a much
+          // better total scroll extent than our startup pixel estimate. Jump
+          // by index ratio so distant targets are built, then align the real
+          // widget precisely on the following frame.
+          final targetRatio = _initialTargetIndex / (itemCount - 1);
+          final position = _scrollController.position;
+          final targetOffset = position.maxScrollExtent * targetRatio;
+          if ((position.pixels - targetOffset).abs() > 1) {
+            _scrollController.jumpTo(targetOffset);
+          }
+        }
+        if (attempt < 6) _scheduleInitialTargetAlignment(attempt + 1);
+        return;
+      }
+      _initialTargetAligned = true;
+      unawaited(
+        Scrollable.ensureVisible(
+          targetContext,
+          alignment: .28,
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+        ),
+      );
+    });
+  }
 
   Future<void> _eject(int index) async {
     setState(() => _ejectingIndices.add(index));
@@ -192,104 +243,108 @@ class _QueuePageState extends State<QueuePage> {
                         ],
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: RetroPanel(
-                        padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
-                        onTap: () async {
-                          await controller.selectQueueItem(i);
-                          await controller.play();
-                        },
-                        color: active
-                            ? const Color(0xFF30291E)
-                            : AppColors.panel,
-                        child: Row(
-                          children: [
-                            Icon(
-                              active && controller.state.isPlaying
-                                  ? Icons.graphic_eq
-                                  : Icons.circle,
-                              size: active ? 20 : 7,
-                              color: active
-                                  ? AppColors.cyan
-                                  : AppColors.outline,
-                            ),
-                            const SizedBox(width: 9),
-                            TrackArtwork(
-                              track: track,
-                              size: 50,
-                              borderRadius: 4,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                    child: KeyedSubtree(
+                      key: i == _initialTargetIndex ? _initialTargetKey : null,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: RetroPanel(
+                          padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+                          onTap: () async {
+                            await controller.selectQueueItem(i);
+                            await controller.play();
+                          },
+                          color: active
+                              ? const Color(0xFF30291E)
+                              : AppColors.panel,
+                          child: Row(
+                            children: [
+                              Icon(
+                                active && controller.state.isPlaying
+                                    ? Icons.graphic_eq
+                                    : Icons.circle,
+                                size: active ? 20 : 7,
+                                color: active
+                                    ? AppColors.cyan
+                                    : AppColors.outline,
+                              ),
+                              const SizedBox(width: 9),
+                              TrackArtwork(
+                                track: track,
+                                size: 50,
+                                borderRadius: 4,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      track.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontFamily: 'sans-serif',
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: active
+                                            ? AppColors.amber
+                                            : AppColors.text,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      track.artist,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontFamily: 'sans-serif',
+                                        color: AppColors.textWarm,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(
-                                    track.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontFamily: 'sans-serif',
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: active
-                                          ? AppColors.amber
-                                          : AppColors.text,
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 7,
+                                      vertical: 3,
+                                    ),
+                                    child: Text(
+                                      _duration(track.duration),
+                                      style: TextStyle(
+                                        color: active
+                                            ? AppColors.amber
+                                            : AppColors.textWarm,
+                                        fontSize: 10,
+                                        letterSpacing: .6,
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    track.artist,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontFamily: 'sans-serif',
-                                      color: AppColors.textWarm,
-                                      fontSize: 13,
+                                  ReorderableDragStartListener(
+                                    index: i,
+                                    child: Container(
+                                      width: 34,
+                                      height: 28,
+                                      alignment: Alignment.center,
+                                      child: const Icon(
+                                        Icons.drag_indicator,
+                                        color: AppColors.cyan,
+                                        size: 20,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(width: 10),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 7,
-                                    vertical: 3,
-                                  ),
-                                  child: Text(
-                                    _duration(track.duration),
-                                    style: TextStyle(
-                                      color: active
-                                          ? AppColors.amber
-                                          : AppColors.textWarm,
-                                      fontSize: 10,
-                                      letterSpacing: .6,
-                                    ),
-                                  ),
-                                ),
-                                ReorderableDragStartListener(
-                                  index: i,
-                                  child: Container(
-                                    width: 34,
-                                    height: 28,
-                                    alignment: Alignment.center,
-                                    child: const Icon(
-                                      Icons.drag_indicator,
-                                      color: AppColors.cyan,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
