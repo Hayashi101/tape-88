@@ -53,6 +53,7 @@ final class ServiceLocator {
         config: AudioServiceConfig(
           androidNotificationChannelId: 'com.tape88.playback',
           androidNotificationChannelName: 'Tape 88 playback',
+          androidNotificationIcon: 'drawable/ic_stat_tape_88',
           androidNotificationOngoing: true,
           androidStopForegroundOnPause: true,
         ),

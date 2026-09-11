@@ -1,34 +1,25 @@
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:path_provider/path_provider.dart';
+import 'package:tape_88/core/storage/json_file_store.dart';
 import 'package:tape_88/features/playlists/domain/entities/playlist.dart';
 import 'package:tape_88/features/playlists/domain/repositories/playlist_repository.dart';
 
 final class FilePlaylistRepository implements PlaylistRepository {
-  Future<File> get _file async {
-    final directory = await getApplicationDocumentsDirectory();
-    return File('${directory.path}/playlists.json');
-  }
+  final _store = JsonFileStore('playlists.json');
 
   @override
   Future<List<Playlist>> load() async {
-    final file = await _file;
-    if (!await file.exists()) return const [];
-    final decoded = jsonDecode(await file.readAsString()) as List<dynamic>;
-    return decoded
-        .map(
-          (item) => Playlist.fromJson(Map<String, dynamic>.from(item as Map)),
-        )
-        .toList(growable: false);
+    return _store.load(
+      fallback: const <Playlist>[],
+      decode: (json) => (json as List<dynamic>)
+          .map(
+            (item) => Playlist.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList(growable: false),
+    );
   }
 
   @override
   Future<void> save(List<Playlist> playlists) async {
-    final file = await _file;
-    await file.writeAsString(
-      jsonEncode(playlists.map((item) => item.toJson()).toList()),
-    );
+    await _store.save(playlists.map((item) => item.toJson()).toList());
   }
 }
 
