@@ -11,18 +11,13 @@ class RetroHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) => AppBar(
     automaticallyImplyLeading: false,
-    titleSpacing: 16,
+    titleSpacing: 12,
     title: Row(
       children: [
         Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: AppColors.panel,
-            borderRadius: BorderRadius.circular(7),
-            border: Border.all(color: AppColors.panelHighest),
-          ),
-          padding: const EdgeInsets.all(3),
+          width: 36,
+          height: 36,
+          padding: const EdgeInsets.all(0),
           child: Image.asset(
             'assets/branding/tape_88_logo_foreground.png',
             fit: BoxFit.contain,
@@ -34,7 +29,21 @@ class RetroHeader extends StatelessWidget implements PreferredSizeWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(compact ? 'TAPE88' : 'RETROTAPE'),
+            child: ShaderMask(
+              shaderCallback: (bounds) {
+                return const LinearGradient(
+                  colors: [
+                    Color(0xFF00F5FF), // cyan
+                    Color(0xFF0066FF), // electric blue
+                    Color(0xFF7B2CFF), // purple
+                    Color(0xFFFF2DAA), // hot pink
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ).createShader(bounds);
+              },
+              child: Text(compact ? 'TAPE88' : 'RETROTAPE'),
+            ),
           ),
         ),
       ],

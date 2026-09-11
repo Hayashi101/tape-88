@@ -40,6 +40,12 @@ class _LibraryPageState extends State<LibraryPage> {
   int _filter = 0;
   _LibrarySort _sort = _LibrarySort.trackNumber;
   bool _sortAscending = true;
+  final Map<int, bool> _tabSortAscending = {
+    1: true,
+    2: true,
+    3: false,
+    4: true,
+  };
   static const filters = [
     'ALL SONGS',
     'ALBUMS',
@@ -153,9 +159,7 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   Future<void> _playRecent(Track track) async {
-    final tracks = widget.recentController.resolveTracks(
-      widget.libraryController.tracks,
-    );
+    final tracks = _recentTracks;
     await widget.controller.loadQueue(
       tracks,
       initialIndex: tracks.indexOf(track),
@@ -164,9 +168,7 @@ class _LibraryPageState extends State<LibraryPage> {
   }
 
   Future<void> _playFavorite(Track track) async {
-    final tracks = widget.favoritesController.resolveTracks(
-      widget.libraryController.tracks,
-    );
+    final tracks = _favoriteTracks;
     await widget.controller.loadQueue(
       tracks,
       initialIndex: tracks.indexOf(track),
@@ -280,8 +282,9 @@ class _LibraryPageState extends State<LibraryPage> {
         tracks: entry.value,
       );
     }).toList();
+    final ascending = _tabSortAscending[1] ?? true;
     collections.sort(
-      (a, b) => _sortAscending
+      (a, b) => ascending
           ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
           : b.title.toLowerCase().compareTo(a.title.toLowerCase()),
     );
@@ -302,13 +305,47 @@ class _LibraryPageState extends State<LibraryPage> {
           ),
         )
         .toList();
+    final ascending = _tabSortAscending[2] ?? true;
     collections.sort(
-      (a, b) => _sortAscending
+      (a, b) => ascending
           ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
           : b.title.toLowerCase().compareTo(a.title.toLowerCase()),
     );
     return collections;
   }
+
+  List<Track> get _recentTracks {
+    final tracks = widget.recentController.resolveTracks(
+      widget.libraryController.tracks,
+    );
+    return (_tabSortAscending[3] ?? false)
+        ? tracks.reversed.toList(growable: false)
+        : tracks;
+  }
+
+  List<Track> get _favoriteTracks {
+    final tracks = [
+      ...widget.favoritesController.resolveTracks(
+        widget.libraryController.tracks,
+      ),
+    ];
+    tracks.sort((a, b) {
+      final result = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+      return (_tabSortAscending[4] ?? true) ? result : -result;
+    });
+    return tracks;
+  }
+
+  bool get _activeSortAscending =>
+      _filter == 0 ? _sortAscending : _tabSortAscending[_filter] ?? true;
+
+  void _reverseActiveSort() => setState(() {
+    if (_filter == 0) {
+      _sortAscending = !_sortAscending;
+    } else {
+      _tabSortAscending[_filter] = !(_tabSortAscending[_filter] ?? true);
+    }
+  });
 
   void _openCollection(_TrackCollection collection, {required bool artist}) {
     Navigator.of(context).push(
@@ -357,7 +394,7 @@ class _LibraryPageState extends State<LibraryPage> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
             sliver: SliverList.list(
               children: [
                 RetroPanel(
@@ -463,34 +500,26 @@ class _LibraryPageState extends State<LibraryPage> {
                       ),
                       child: Text(
                         '${switch (_filter) {
-                          3 => widget.recentController.resolveTracks(widget.libraryController.tracks).length,
-                          4 => widget.favoritesController.resolveTracks(widget.libraryController.tracks).length,
+                          3 => _recentTracks.length,
+                          4 => _favoriteTracks.length,
                           _ => widget.libraryController.tracks.length,
                         }} LOADED',
                         style: const TextStyle(fontSize: 9),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    if (_filter == 0)
-                      _CompactSortControl(
-                        label: _sort.shortLabel,
-                        ascending: _sortAscending,
-                        onSort: _chooseSort,
-                        onReverse: () =>
-                            setState(() => _sortAscending = !_sortAscending),
-                      )
-                    else
-                      Text(
-                        switch (_filter) {
-                          1 || 2 => _sortAscending ? 'SORT: A–Z' : 'SORT: Z–A',
-                          3 => 'SORT: LAST PLAYED',
-                          _ => 'SORT: FAVORITES',
-                        },
-                        style: const TextStyle(
-                          color: AppColors.amberSoft,
-                          fontSize: 9,
-                        ),
-                      ),
+                    _CompactSortControl(
+                      label: switch (_filter) {
+                        1 => 'ALBUM',
+                        2 => 'ARTIST',
+                        3 => 'PLAYED',
+                        4 => 'TITLE',
+                        _ => _sort.shortLabel,
+                      },
+                      ascending: _activeSortAscending,
+                      onSort: _filter == 0 ? _chooseSort : null,
+                      onReverse: _reverseActiveSort,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -498,34 +527,16 @@ class _LibraryPageState extends State<LibraryPage> {
                   _LibraryStatePanel(controller: widget.libraryController),
                 if (widget.libraryController.status == LibraryStatus.ready &&
                     (_filter == 3 || _filter == 4) &&
-                    (_filter == 3
-                            ? widget.recentController.resolveTracks(
-                                widget.libraryController.tracks,
-                              )
-                            : widget.favoritesController.resolveTracks(
-                                widget.libraryController.tracks,
-                              ))
+                    (_filter == 3 ? _recentTracks : _favoriteTracks)
                         .isNotEmpty) ...[
                   _TrackSetControls(
                     showClear: _filter == 3,
                     onPlay: () => _playTrackSet(
-                      _filter == 3
-                          ? widget.recentController.resolveTracks(
-                              widget.libraryController.tracks,
-                            )
-                          : widget.favoritesController.resolveTracks(
-                              widget.libraryController.tracks,
-                            ),
+                      _filter == 3 ? _recentTracks : _favoriteTracks,
                       shuffle: false,
                     ),
                     onShuffle: () => _playTrackSet(
-                      _filter == 3
-                          ? widget.recentController.resolveTracks(
-                              widget.libraryController.tracks,
-                            )
-                          : widget.favoritesController.resolveTracks(
-                              widget.libraryController.tracks,
-                            ),
+                      _filter == 3 ? _recentTracks : _favoriteTracks,
                       shuffle: true,
                     ),
                     onClear: _confirmClearRecent,
@@ -564,9 +575,7 @@ class _LibraryPageState extends State<LibraryPage> {
                   ),
                 if (widget.libraryController.status == LibraryStatus.ready &&
                     _filter == 3 &&
-                    widget.recentController
-                        .resolveTracks(widget.libraryController.tracks)
-                        .isEmpty)
+                    _recentTracks.isEmpty)
                   const RetroPanel(
                     padding: EdgeInsets.all(28),
                     child: Column(
@@ -587,21 +596,18 @@ class _LibraryPageState extends State<LibraryPage> {
                   ),
                 if (widget.libraryController.status == LibraryStatus.ready &&
                     _filter == 3)
-                  ...widget.recentController
-                      .resolveTracks(widget.libraryController.tracks)
-                      .map(
-                        (track) => Padding(
-                          padding: const EdgeInsets.only(bottom: 7),
-                          child: _TrackRow(
-                            track: track,
-                            active:
-                                widget.controller.state.currentTrack == track,
-                            onTap: () => _playRecent(track),
-                            onMenu: () => _showTrackActions(track),
-                            onAlbum: () => _openTrackAlbum(track),
-                          ),
-                        ),
+                  ..._recentTracks.map(
+                    (track) => Padding(
+                      padding: const EdgeInsets.only(bottom: 7),
+                      child: _TrackRow(
+                        track: track,
+                        active: widget.controller.state.currentTrack == track,
+                        onTap: () => _playRecent(track),
+                        onMenu: () => _showTrackActions(track),
+                        onAlbum: () => _openTrackAlbum(track),
                       ),
+                    ),
+                  ),
                 if (widget.libraryController.status == LibraryStatus.ready &&
                     _filter == 1)
                   ..._collectionsByAlbum(widget.libraryController.tracks).map(
@@ -613,9 +619,7 @@ class _LibraryPageState extends State<LibraryPage> {
                   ),
                 if (widget.libraryController.status == LibraryStatus.ready &&
                     _filter == 4 &&
-                    widget.favoritesController
-                        .resolveTracks(widget.libraryController.tracks)
-                        .isEmpty)
+                    _favoriteTracks.isEmpty)
                   const RetroPanel(
                     padding: EdgeInsets.all(28),
                     child: Column(
@@ -641,21 +645,18 @@ class _LibraryPageState extends State<LibraryPage> {
                   ),
                 if (widget.libraryController.status == LibraryStatus.ready &&
                     _filter == 4)
-                  ...widget.favoritesController
-                      .resolveTracks(widget.libraryController.tracks)
-                      .map(
-                        (track) => Padding(
-                          padding: const EdgeInsets.only(bottom: 7),
-                          child: _TrackRow(
-                            track: track,
-                            active:
-                                widget.controller.state.currentTrack == track,
-                            onTap: () => _playFavorite(track),
-                            onMenu: () => _showTrackActions(track),
-                            onAlbum: () => _openTrackAlbum(track),
-                          ),
-                        ),
+                  ..._favoriteTracks.map(
+                    (track) => Padding(
+                      padding: const EdgeInsets.only(bottom: 7),
+                      child: _TrackRow(
+                        track: track,
+                        active: widget.controller.state.currentTrack == track,
+                        onTap: () => _playFavorite(track),
+                        onMenu: () => _showTrackActions(track),
+                        onAlbum: () => _openTrackAlbum(track),
                       ),
+                    ),
+                  ),
                 if (widget.libraryController.status == LibraryStatus.ready &&
                     _filter == 2)
                   ..._collectionsByArtist(widget.libraryController.tracks).map(
@@ -771,24 +772,15 @@ class _LibraryControlsDelegate extends SliverPersistentHeaderDelegate {
           ),
           const SizedBox(height: 8),
           SizedBox(
-            height: 42,
+            height: 40,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: filters.length,
               separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (_, index) => ChoiceChip(
+              itemBuilder: (_, index) => _LibraryFilterChip(
                 label: Text(filters[index]),
                 selected: selectedFilter == index,
-                onSelected: (_) => onFilterChanged(index),
-                selectedColor: AppColors.amber,
-                backgroundColor: AppColors.panelLow,
-                labelStyle: TextStyle(
-                  color: selectedFilter == index
-                      ? AppColors.black
-                      : AppColors.textWarm,
-                  fontSize: 10,
-                  letterSpacing: 1,
-                ),
+                onTap: () => onFilterChanged(index),
               ),
             ),
           ),
@@ -801,6 +793,44 @@ class _LibraryControlsDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(_LibraryControlsDelegate oldDelegate) =>
       selectedFilter != oldDelegate.selectedFilter ||
       filters != oldDelegate.filters;
+}
+
+class _LibraryFilterChip extends StatelessWidget {
+  const _LibraryFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Widget label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: selected ? AppColors.amber : AppColors.panelLow.withAlpha(160),
+    borderRadius: BorderRadius.circular(9),
+    shadowColor: selected ? AppColors.amber : Colors.transparent,
+    elevation: selected ? 4 : 0,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(9),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+          child: DefaultTextStyle(
+            style: TextStyle(
+              color: selected ? AppColors.black : AppColors.textWarm,
+              fontSize: 10,
+              fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              letterSpacing: 1,
+            ),
+            child: label,
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _HeaderControl extends StatelessWidget {
@@ -884,13 +914,13 @@ class _CompactSortControl extends StatelessWidget {
   const _CompactSortControl({
     required this.label,
     required this.ascending,
-    required this.onSort,
+    this.onSort,
     required this.onReverse,
   });
 
   final String label;
   final bool ascending;
-  final VoidCallback onSort;
+  final VoidCallback? onSort;
   final VoidCallback onReverse;
 
   @override
@@ -905,7 +935,9 @@ class _CompactSortControl extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Tooltip(
-          message: 'Choose sort mode',
+          message: onSort == null
+              ? 'Fixed sort mode for this tab'
+              : 'Choose sort mode',
           child: InkWell(
             onTap: onSort,
             borderRadius: const BorderRadius.horizontal(

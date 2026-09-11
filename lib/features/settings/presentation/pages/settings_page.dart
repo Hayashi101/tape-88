@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:tape_88/core/theme/app_colors.dart';
 import 'package:tape_88/core/widgets/retro_header.dart';
@@ -22,8 +23,11 @@ class SettingsPage extends StatelessWidget {
   final LibraryController libraryController;
   final SettingsController settingsController;
 
-  Future<void> _setVolume(double value) async {
+  Future<void> _previewVolume(double value) async {
     await controller.setVolume(value);
+  }
+
+  Future<void> _saveVolume(double value) async {
     await settingsController.setVolume(value);
   }
 
@@ -198,7 +202,11 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                Slider(value: controller.state.volume, onChanged: _setVolume),
+                Slider(
+                  value: controller.state.volume,
+                  onChanged: _previewVolume,
+                  onChangeEnd: _saveVolume,
+                ),
                 const Text(
                   'Saved locally and restored the next time the deck starts.',
                   style: _subtitleStyle,
@@ -304,7 +312,7 @@ class SettingsPage extends StatelessWidget {
               ],
             ),
           ),
-          if (settingsController.errorMessage != null) ...[
+          if (kDebugMode && settingsController.errorMessage != null) ...[
             const SizedBox(height: 14),
             Text(
               'SETTINGS SAVE ERROR: ${settingsController.errorMessage}',
