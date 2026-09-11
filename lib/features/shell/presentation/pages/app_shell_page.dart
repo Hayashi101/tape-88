@@ -13,8 +13,42 @@ class AppShellPage extends StatefulWidget {
   State<AppShellPage> createState() => _AppShellPageState();
 }
 
-class _AppShellPageState extends State<AppShellPage> {
+class _AppShellPageState extends State<AppShellPage>
+    with SingleTickerProviderStateMixin {
   int _index = 0;
+  late final AnimationController _nowPlayingTransition = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+    reverseDuration: const Duration(milliseconds: 220),
+    value: 1,
+  );
+  late final Animation<double> _nowPlayingOpacity = CurvedAnimation(
+    parent: _nowPlayingTransition,
+    curve: Curves.easeOutCubic,
+  );
+  late final Animation<Offset> _nowPlayingOffset = Tween<Offset>(
+    begin: const Offset(0, .06),
+    end: Offset.zero,
+  ).animate(_nowPlayingOpacity);
+
+  void _selectPage(int index) {
+    if (index == _index) return;
+    final opensNowPlaying = index == 0;
+    setState(() => _index = index);
+    if (opensNowPlaying) {
+      _nowPlayingTransition.forward(from: 0);
+    } else {
+      _nowPlayingTransition.value = 1;
+    }
+  }
+
+  void _showNowPlaying() => _selectPage(0);
+
+  @override
+  void dispose() {
+    _nowPlayingTransition.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +56,7 @@ class _AppShellPageState extends State<AppShellPage> {
     final pages = [
       NowPlayingPage(
         controller: controller,
-        onBrowse: () => setState(() => _index = 1),
+        onBrowse: () => _selectPage(1),
         favoritesController: ServiceLocator.instance.favoritesController,
         onQueue: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
@@ -37,13 +71,13 @@ class _AppShellPageState extends State<AppShellPage> {
         favoritesController: ServiceLocator.instance.favoritesController,
         searchHistoryController:
             ServiceLocator.instance.searchHistoryController,
-        onPlay: () => setState(() => _index = 0),
+        onPlay: _showNowPlaying,
       ),
       PlaylistsPage(
         controller: controller,
         libraryController: ServiceLocator.instance.libraryController,
         playlistController: ServiceLocator.instance.playlistController,
-        onShowNowPlaying: () => setState(() => _index = 0),
+        onShowNowPlaying: _showNowPlaying,
       ),
       SettingsPage(
         controller: controller,
@@ -52,18 +86,21 @@ class _AppShellPageState extends State<AppShellPage> {
       ),
     ];
     return Scaffold(
-      body: IndexedStack(index: _index, children: pages),
+      body: FadeTransition(
+        opacity: _nowPlayingOpacity,
+        child: SlideTransition(
+          position: _nowPlayingOffset,
+          child: IndexedStack(index: _index, children: pages),
+        ),
+      ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_index != 0)
-            MiniPlayer(
-              controller: controller,
-              onOpen: () => setState(() => _index = 0),
-            ),
+            MiniPlayer(controller: controller, onOpen: _showNowPlaying),
           NavigationBar(
             selectedIndex: _index,
-            onDestinationSelected: (value) => setState(() => _index = value),
+            onDestinationSelected: _selectPage,
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.play_circle_outline),
