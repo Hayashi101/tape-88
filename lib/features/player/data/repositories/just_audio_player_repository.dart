@@ -6,13 +6,18 @@ import 'package:tape_88/core/error/failure.dart';
 import 'package:tape_88/core/utils/result.dart';
 import 'package:tape_88/features/library/domain/entities/track.dart';
 import 'package:tape_88/features/player/data/services/android_device_volume.dart';
+import 'package:tape_88/features/player/data/services/android_home_widget_bridge.dart';
 import 'package:tape_88/features/player/data/services/tape_audio_handler.dart';
 import 'package:tape_88/features/player/domain/entities/playback_state.dart';
 import 'package:tape_88/features/player/domain/repositories/audio_player_repository.dart';
 
 final class JustAudioPlayerRepository implements AudioPlayerRepository {
-  JustAudioPlayerRepository(this._handler, [AndroidDeviceVolume? deviceVolume])
-    : _deviceVolume = deviceVolume ?? AndroidDeviceVolume() {
+  JustAudioPlayerRepository(
+    this._handler, [
+    AndroidDeviceVolume? deviceVolume,
+    AndroidHomeWidgetBridge? homeWidget,
+  ]) : _deviceVolume = deviceVolume ?? AndroidDeviceVolume(),
+       _homeWidget = homeWidget ?? AndroidHomeWidgetBridge() {
     _subscriptions.addAll([
       _handler.player.playerStateStream.listen((_) => _emit()),
       _handler.player.positionStream.listen((_) => _emit()),
@@ -42,6 +47,7 @@ final class JustAudioPlayerRepository implements AudioPlayerRepository {
 
   final TapeAudioHandler _handler;
   final AndroidDeviceVolume _deviceVolume;
+  final AndroidHomeWidgetBridge _homeWidget;
   final _controller = StreamController<PlaybackState>.broadcast();
   final List<StreamSubscription<Object?>> _subscriptions = [];
   List<Track> _queue = const [];
@@ -255,6 +261,7 @@ final class JustAudioPlayerRepository implements AudioPlayerRepository {
       currentIndex: _queue.isEmpty ? -1 : index,
     );
     _controller.add(_state);
+    unawaited(_homeWidget.synchronize(_state));
   }
 
   @override

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Retro cassette controls for Tape 88</string>
+    <string name="widget_next">Next track</string>
+    <string name="widget_open_player">Open Tape 88 player</string>
+    <string name="widget_play_pause">Play or pause</string>
+    <string name="widget_previous">Previous track</string>
+    <string name="widget_default_deck_label">TAPE 88 • LOCAL DECK</string>
+    <string name="widget_default_title">NO TAPE LOADED</string>
+    <string name="widget_default_artist">LOCAL ARCHIVE</string>
+</resources>

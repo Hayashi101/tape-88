@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_tape_background"
+    android:gravity="center_vertical"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:baselineAligned="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:id="@+id/widget_cassette_area"
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:background="@drawable/widget_artwork_background"
+            android:padding="2dp">
+
+            <ImageView
+                android:id="@+id/widget_artwork"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/widget_open_player"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/ic_launcher_foreground" />
+
+            <ImageView
+                android:id="@+id/widget_led"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="5dp"
+                android:background="@drawable/widget_led_inactive"
+                android:contentDescription="@null" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="13dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_deck_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-condensed"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/widget_default_deck_label"
+                android:textColor="#FFFF9F1C"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/widget_default_title"
+                android:textColor="#FFF4EEE8"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="@string/widget_default_artist"
+                android:textColor="#FFBCAEA4"
+                android:textSize="11sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="8dp"
+                android:gravity="start|center_vertical"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/widget_previous"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/widget_control_background"
+                    android:contentDescription="@string/widget_previous"
+                    android:padding="6dp"
+                    android:src="@drawable/audio_service_skip_previous"
+                    android:tint="#FFDAD5D1" />
+
+                <ImageButton
+                    android:id="@+id/widget_play_pause"
+                    android:layout_width="48dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/widget_play_background"
+                    android:contentDescription="@string/widget_play_pause"
+                    android:padding="8dp"
+                    android:src="@drawable/audio_service_play_arrow"
+                    android:tint="#FFFFA11A" />
+
+                <ImageButton
+                    android:id="@+id/widget_next"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/widget_control_background"
+                    android:contentDescription="@string/widget_next"
+                    android:padding="6dp"
+                    android:src="@drawable/audio_service_skip_next"
+                    android:tint="#FFDAD5D1" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/widget_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:layout_marginTop="9dp"
+        android:max="1000"
+        android:progress="0"
+        android:progressDrawable="@drawable/widget_progress" />
+</LinearLayout>

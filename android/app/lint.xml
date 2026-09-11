@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Media-session notifications are exempt from Android 13's notification
+         runtime permission. Tape 88 intentionally requests no general-purpose
+         notification permission. -->
+    <issue id="NotificationPermission" severity="ignore" />
+</lint>

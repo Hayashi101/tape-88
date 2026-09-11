@@ -32,6 +32,7 @@ class MainActivity : AudioServiceActivity() {
     private val channelName = "tape_88/media_library"
     private val volumeChannelName = "tape_88/device_volume"
     private val volumeEventsName = "tape_88/device_volume_changes"
+    private val homeWidgetChannelName = "tape_88/home_widget"
     private val permissionRequestCode = 8801
     private var permissionResult: MethodChannel.Result? = null
     private val artworkExecutor = Executors.newSingleThreadExecutor()
@@ -105,6 +106,25 @@ class MainActivity : AudioServiceActivity() {
                             setMediaVolume(volume)
                             result.success(null)
                         }
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, homeWidgetChannelName)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "updatePlayback" -> {
+                        Tape88WidgetProvider.updatePlayback(
+                            applicationContext,
+                            call.argument<String>("title"),
+                            call.argument<String>("artist"),
+                            call.argument<Boolean>("hasTrack") ?: false,
+                            call.argument<Boolean>("isPlaying") ?: false,
+                            call.argument<Number>("positionMs")?.toLong() ?: 0L,
+                            call.argument<Number>("durationMs")?.toLong() ?: 0L,
+                            call.argument<ByteArray>("artwork"),
+                        )
+                        result.success(null)
                     }
                     else -> result.notImplemented()
                 }
