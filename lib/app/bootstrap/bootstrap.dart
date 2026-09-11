@@ -62,7 +62,7 @@ class _BootstrapGateState extends State<_BootstrapGate> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Image.asset(
-                  'assets/branding/tape_88_logo_foreground.png',
+                  'assets/icon/icon.png',
                   width: 132,
                   filterQuality: FilterQuality.medium,
                 ),

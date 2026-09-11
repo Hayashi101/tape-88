@@ -134,7 +134,7 @@ class Tape88WidgetProvider : AppWidgetProvider() {
                 if (artwork != null) {
                     setImageViewBitmap(R.id.widget_artwork, artwork)
                 } else {
-                    setImageViewResource(R.id.widget_artwork, R.mipmap.ic_launcher_foreground)
+                    setImageViewResource(R.id.widget_artwork, R.mipmap.widget_cassette_placeholder)
                 }
                 setOnClickPendingIntent(
                     R.id.widget_previous,

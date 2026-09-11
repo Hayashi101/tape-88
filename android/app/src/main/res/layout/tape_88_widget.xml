@@ -28,7 +28,7 @@
                 android:layout_height="match_parent"
                 android:contentDescription="@string/widget_open_player"
                 android:scaleType="centerCrop"
-                android:src="@mipmap/ic_launcher_foreground" />
+                android:src="@mipmap/widget_cassette_placeholder" />
 
             <ImageView
                 android:id="@+id/widget_led"

@@ -19,7 +19,7 @@ class RetroHeader extends StatelessWidget implements PreferredSizeWidget {
           height: 36,
           padding: const EdgeInsets.all(0),
           child: Image.asset(
-            'assets/branding/tape_88_logo_foreground.png',
+            'assets/icon/icon.png',
             fit: BoxFit.contain,
             filterQuality: FilterQuality.medium,
           ),
